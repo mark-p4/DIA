@@ -14,8 +14,10 @@ originPath = pc
 dblpPAth = paste(originPath, "DBLP_1995_2004.csv", sep = "")
 acmPath = paste(originPath, "ACM_1995_2004.csv", sep = "")
 
-dblpFiltered = read.csv(dblpPAth)
-acmFiltered = read.csv(acmPath)
+overviewCols = c("experiment", "tuplesComputed" ,"blocking", "SimMeasure", "Matches", "avgTime")
+resultOverview = data.frame(matrix(nrow = 10, ncol = length(overviewCols)))
+colnames(resultOverview) =  overviewCols
+
 
 #plan:
 
@@ -39,6 +41,10 @@ acmFiltered = read.csv(acmPath)
 #coding part
 #-------------------------------------------------------------------------------
 
+#-------------------------------------------------------------------------------
+#baseline
+#-------------------------------------------------------------------------------
+
 #make all columns containing text string into lower case and remove special characters and white spaces
 
 normText = function(x, whiteSpace = TRUE){
@@ -50,19 +56,80 @@ normText = function(x, whiteSpace = TRUE){
   x = tolower(x)
   return(x)
 }
+
+dblpFiltered = read.csv(dblpPAth)
+acmFiltered = read.csv(acmPath)
+
+
 dblpFiltered[, c("title","authors","venue","abstract")] = apply(dblpFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x))
 acmFiltered[, c("title","authors","venue","abstract")] = apply(acmFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x))
 
-dblpFiltered$id = paste("d", 1:nrow(dblpFiltered),sep = "_")
+#dblpFiltered$id = paste("d", 1:nrow(dblpFiltered),sep = "_")
 colnames(dblpFiltered) = paste("d", colnames(dblpFiltered),sep = "_")
 
-acmFiltered$id = paste("a",1:nrow(acmFiltered), sep = "_")
+#acmFiltered$id = paste("a",1:nrow(acmFiltered), sep = "_")
 colnames(acmFiltered) = paste("a", colnames(acmFiltered), sep = "_")
 
 fullData = merge(dblpFiltered, acmFiltered)
-fullData = add_column(fullData, key = paste(fullData$d_id, fullData$a_id, sep = "-"))
-length(fullData$key)
-length(unique(fullData$key))
+#fullData = add_column(fullData, key = paste(fullData$d_id, fullData$a_id, sep = "-"))
+#length(fullData$key)
+#length(unique(fullData$key))
+
+#fullData[,"yearDiff"] = abs(fullData$d_year - fullData$a_year)
+
+baseLineLV = function(fullData1){
+  fullData1[, "lvSim"] = stringsim(fullData1$d_title, fullData1$a_title, method = "lv")
+  #fullData1[, "lvPerc"] = fullData1$lvDist / max(nchar(fullData1$d_title), nchar(fullData1$a_title))
+  fullData1[, "matched"] = fullData1$lvSim >= 0.8
+  return(fullData1)
+}
+
+#microbenchmark results are in Nanoseconds
+results = microbenchmark(baseLineLV(fullData), times = 10)
+#print(results, unit = "ns")
+write.csv(results,paste(originPath, "result_baseline_bench.csv", sep = ""), row.names = FALSE)
+
+fullData1 = baseLineLV(fullData)
+nrow(fullData1[fullData1$matched, ])
+
+write.csv(fullData1[,c("d_id", "a_id", "lvSim","matched")], paste(originPath, "matched_Entities_Baseline.csv", sep = ""), row.names = FALSE)
+
+resultSum = c("baseline", nrow(fullData), "without", "Levenshtein - untuned", nrow(fullData1[fullData1$matched, ]), mean(results$time))
+resultOverview[1,] = resultSum
+
+#-------------------------------------------------------------------------------
+#baseline - tuned
+#-------------------------------------------------------------------------------
+
+#make all columns containing text string into lower case and remove special characters and white spaces
+
+normText = function(x, whiteSpace = TRUE){
+  x = str_replace_all(x, "[[:punct:]]", "")
+  x = str_replace_all(x, "[^[:alnum:]]", "")
+  if (whiteSpace) {
+    x = str_replace_all(x, " ", "")
+  }
+  x = tolower(x)
+  return(x)
+}
+
+dblpFiltered = read.csv(dblpPAth)
+acmFiltered = read.csv(acmPath)
+
+
+dblpFiltered[, c("title","authors","venue","abstract")] = apply(dblpFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x))
+acmFiltered[, c("title","authors","venue","abstract")] = apply(acmFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x))
+
+#dblpFiltered$id = paste("d", 1:nrow(dblpFiltered),sep = "_")
+colnames(dblpFiltered) = paste("d", colnames(dblpFiltered),sep = "_")
+
+#acmFiltered$id = paste("a",1:nrow(acmFiltered), sep = "_")
+colnames(acmFiltered) = paste("a", colnames(acmFiltered), sep = "_")
+
+fullData = merge(dblpFiltered, acmFiltered)
+#fullData = add_column(fullData, key = paste(fullData$d_id, fullData$a_id, sep = "-"))
+#length(fullData$key)
+#length(unique(fullData$key))
 
 #fullData[,"yearDiff"] = abs(fullData$d_year - fullData$a_year)
 
@@ -73,19 +140,92 @@ baseLineLV = function(fullData1){
   return(fullData1)
 }
 
+#microbenchmark results are in Nanoseconds
 results = microbenchmark(baseLineLV(fullData), times = 10)
-write.csv(results,paste(originPath, "result_baseline_bench.csv", sep = ""), row.names = FALSE)
+#print(results, unit = "ns")
+write.csv(results,paste(originPath, "result_baseline_tuned_bench.csv", sep = ""), row.names = FALSE)
 
 fullData1 = baseLineLV(fullData)
+nrow(fullData1[fullData1$matched, ])
 
-write.csv(fullData1[,c("key", "matched")], paste(originPath, "matched_Entities_Baseline.csv", sep = ""), row.names = FALSE)
-  
-blockedData[, "lvDist"] = stringdist(blockedData$d_title, blockedData$a_title, method = "lv")
-blockedData[, "lvPerc"] = blockedData$lvDist / max(nchar(blockedData$d_title), nchar(blockedData$a_title))
+write.csv(fullData1[,c("d_id", "a_id", "lvSim","matched")], paste(originPath, "matched_Entities_Baseline_tuned.csv", sep = ""), row.names = FALSE)
 
-similar = fullData1[fullData1$matched, c("key", "d_title", "a_title", "lvSim", "matched")]
+resultSum = c("baseline-tuned", nrow(fullData), "without", "Levenshtein", nrow(fullData1[fullData1$matched, ]), mean(results$time))
+resultOverview[2,] = resultSum
 
-hist(blockedData$lvDist)
-hist(blockedData$lvPerc)
+#-------------------------------------------------------------------------------
+# blocking by year and levenshtein distance tuned
+#-------------------------------------------------------------------------------
+dblpFiltered = read.csv(dblpPAth)
+acmFiltered = read.csv(acmPath)
 
-similar = blockedData[blockedData$lvPerc <= 0.05, c("d_id", "a_id", "d_title", "a_title", "lvDist", "lvPerc","d_year","a_year")]
+dblpFiltered[, c("title","authors","venue","abstract")] = apply(dblpFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x))
+acmFiltered[, c("title","authors","venue","abstract")] = apply(acmFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x))
+
+#dblpFiltered$id = paste("d", 1:nrow(dblpFiltered),sep = "_")
+colnames(dblpFiltered) = paste("d", colnames(dblpFiltered),sep = "_")
+
+#acmFiltered$id = paste("a",1:nrow(acmFiltered), sep = "_")
+colnames(acmFiltered) = paste("a", colnames(acmFiltered), sep = "_")
+
+fullData = merge(dblpFiltered, acmFiltered)
+
+pipeline1 = function(){
+  fullData[, "yearDiff"] = abs(fullData$d_year - fullData$a_year)
+  blockedData = fullData[fullData$yearDiff == 0,]
+  blockedData[, "lvSim"] = stringsim(blockedData$d_title, blockedData$a_title, method = "lv")
+  #untuned
+  blockedData[, "matched"] = blockedData$lvSim >= 0.8
+  #tuned
+  #blockedData[, "matched"] = blockedData$lvSim >= 0.95 
+  return(blockedData)
+}
+
+results = microbenchmark(pipeline1(), times = 10)
+write.csv(results,paste(originPath, "result_pipeline1_untuned_bench.csv", sep = ""), row.names = FALSE)
+#write.csv(results,paste(originPath, "result_pipeline1_bench.csv", sep = ""), row.names = FALSE)
+
+fullData1 = pipeline1()
+
+nrow(fullData1[fullData1$matched, ])
+
+write.csv(fullData1[,c("d_id", "a_id", "lvSim","matched")], paste(originPath, "matched_Entities_pipeline1_untuned.csv", sep = ""), row.names = FALSE)
+#write.csv(fullData1[,c("d_id", "a_id", "lvSim","matched")], paste(originPath, "matched_Entities_pipeline1.csv", sep = ""), row.names = FALSE)
+
+#-------------------------------------------------------------------------------
+# blocking by year and levenshtein distance tuned
+#-------------------------------------------------------------------------------
+dblpFiltered = read.csv(dblpPAth)
+acmFiltered = read.csv(acmPath)
+
+dblpFiltered[, c("title","authors","venue","abstract")] = apply(dblpFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x))
+acmFiltered[, c("title","authors","venue","abstract")] = apply(acmFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x))
+
+#dblpFiltered$id = paste("d", 1:nrow(dblpFiltered),sep = "_")
+colnames(dblpFiltered) = paste("d", colnames(dblpFiltered),sep = "_")
+
+#acmFiltered$id = paste("a",1:nrow(acmFiltered), sep = "_")
+colnames(acmFiltered) = paste("a", colnames(acmFiltered), sep = "_")
+
+fullData = merge(dblpFiltered, acmFiltered)
+
+pipeline1 = function(){
+  fullData[, "yearDiff"] = abs(fullData$d_year - fullData$a_year)
+  blockedData = fullData[fullData$yearDiff == 0,]
+  blockedData[, "lvSim"] = stringsim(blockedData$d_title, blockedData$a_title, method = "lv")
+  #untuned
+  blockedData[, "matched"] = blockedData$lvSim >= 0.8
+  #tuned
+  #blockedData[, "matched"] = blockedData$lvSim >= 0.95 
+  return(blockedData)
+}
+
+results = microbenchmark(pipeline1(), times = 10)
+write.csv(results,paste(originPath, "result_pipeline1_untuned_bench.csv", sep = ""), row.names = FALSE)
+#write.csv(results,paste(originPath, "result_pipeline1_bench.csv", sep = ""), row.names = FALSE)
+
+fullData1 = pipeline1()
+nrow(fullData1[fullData1$matched, ])
+
+write.csv(fullData1[,c("d_id", "a_id", "lvSim","matched")], paste(originPath, "matched_Entities_pipeline1_untuned.csv", sep = ""), row.names = FALSE)
+#write.csv(fullData1[,c("d_id", "a_id", "lvSim","matched")], paste(originPath, "matched_Entities_pipeline1.csv", sep = ""), row.names = FALSE)

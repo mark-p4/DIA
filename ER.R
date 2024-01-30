@@ -172,25 +172,26 @@ fullData = merge(dblpFiltered, acmFiltered)
 
 pipeline1 = function(){
   fullData[, "yearDiff"] = abs(fullData$d_year - fullData$a_year)
-  blockedData = fullData[fullData$yearDiff == 0,]
+  blockedData = fullData[fullData$yearDiff <= 3,]
   blockedData[, "lvSim"] = stringsim(blockedData$d_title, blockedData$a_title, method = "lv")
   #untuned
-  blockedData[, "matched"] = blockedData$lvSim >= 0.8
+  blockedData[, "matched"] = blockedData$lvSim >= 0.95
   #tuned
   #blockedData[, "matched"] = blockedData$lvSim >= 0.95 
   return(blockedData)
 }
 
 results = microbenchmark(pipeline1(), times = 10)
-write.csv(results,paste(originPath, "result_pipeline1_untuned_bench.csv", sep = ""), row.names = FALSE)
+write.csv(results,paste(originPath, "result_pipeline1_bench.csv", sep = ""), row.names = FALSE)
 #write.csv(results,paste(originPath, "result_pipeline1_bench.csv", sep = ""), row.names = FALSE)
 
 fullData1 = pipeline1()
 
-nrow(fullData1[fullData1$matched, ])
-
-write.csv(fullData1[,c("d_id", "a_id", "lvSim","matched")], paste(originPath, "matched_Entities_pipeline1_untuned.csv", sep = ""), row.names = FALSE)
+write.csv(fullData1[,c("d_id", "a_id", "lvSim","matched")], paste(originPath, "matched_Entities_pipeline1.csv", sep = ""), row.names = FALSE)
 #write.csv(fullData1[,c("d_id", "a_id", "lvSim","matched")], paste(originPath, "matched_Entities_pipeline1.csv", sep = ""), row.names = FALSE)
+
+resultSum = c("pipeline1", nrow(fullData1), "by yearDiff", "Levenshtein", nrow(fullData1[fullData1$matched, ]), mean(results$time))
+resultOverview[3,] = resultSum
 
 #-------------------------------------------------------------------------------
 # blocking by year and levenshtein distance tuned

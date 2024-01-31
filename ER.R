@@ -9,7 +9,7 @@ library(microbenchmark)
 
 laptop= "C:\\Users\\User\\Dropbox\\PC\\Documents\\Uni\\DIA\\files\\unpacked\\"
 pc = "C:\\Users\\Mark\\Dropbox\\PC\\Documents\\Uni\\DIA\\files\\unpacked\\"
-originPath = laptop
+originPath = pc
 
 dblpPAth = paste(originPath, "DBLP_1995_2004.csv", sep = "")
 acmPath = paste(originPath, "ACM_1995_2004.csv", sep = "")
@@ -192,10 +192,10 @@ acmFiltered = read.csv(acmPath)
 dblpFiltered[, c("title","authors","venue","abstract")] = apply(dblpFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x, whiteSpace = FALSE))
 acmFiltered[, c("title","authors","venue","abstract")] = apply(acmFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x, whiteSpace = FALSE))
 
-#dblpFiltered$id = paste("d", 1:nrow(dblpFiltered),sep = "_")
+dblpFiltered$id = paste("d", 1:nrow(dblpFiltered),sep = "_")
 colnames(dblpFiltered) = paste("d", colnames(dblpFiltered),sep = "_")
 
-#acmFiltered$id = paste("a",1:nrow(acmFiltered), sep = "_")
+acmFiltered$id = paste("a",1:nrow(acmFiltered), sep = "_")
 colnames(acmFiltered) = paste("a", colnames(acmFiltered), sep = "_")
 
 fullData = merge(dblpFiltered, acmFiltered)
@@ -204,24 +204,24 @@ pipeline2 = function(){
   fullData[, "yearDiff"] = abs(fullData$d_year - fullData$a_year)
   blockedData = fullData[fullData$yearDiff <= 3,]
   blockedData[, "jacSim"] = stringsim(blockedData$d_title, blockedData$a_title, method = "jaccard", q = 3)
-  blockedData[, "matched"] = blockedData$jacSim >= 0.8
+  blockedData[, "matched"] = blockedData$jacSim >= 0.6
   return(blockedData)
 }
 
 results = microbenchmark(pipeline2(), times = 10)
-write.csv(results, paste(originPath, "result_pipeline1_untuned_bench.csv", sep = ""), row.names = FALSE)
+write.csv(results, paste(originPath, "result_pipeline2_bench.csv", sep = ""), row.names = FALSE)
 #write.csv(results,paste(originPath, "result_pipeline1_bench.csv", sep = ""), row.names = FALSE)
 
 fullData1 = pipeline2()
 hist(fullData1$jacSim)
 nrow(fullData1[fullData1$matched, ])
 
-similar = fullData1[fullData1$matched, c("d_title", "a_title", "jacSim", "matched")]
+similar = fullData1[fullData1$matched, c("d_id","d_title", "a_id","a_title", "jacSim", "matched")]
 
 #stringsim(strsplit(x = fullData[1, "d_title"], split = " "), strsplit(x = fullData[1, "a_title"], split = " "), method = "jaccard")
 
-write.csv(fullData1[,c("d_id", "a_id", "jacSim","matched")], paste(originPath, "matched_Entities_pipeline1_untuned.csv", sep = ""), row.names = FALSE)
+write.csv(fullData1[,c("d_id", "a_id", "jacSim","matched")], paste(originPath, "matched_Entities_pipeline2.csv", sep = ""), row.names = FALSE)
 #write.csv(fullData1[,c("d_id", "a_id", "lvSim","matched")], paste(originPath, "matched_Entities_pipeline1.csv", sep = ""), row.names = FALSE)
 
 resultSum = c("pipeline2", nrow(fullData1), "by yearDiff", "jaccard trigram", nrow(fullData1[fullData1$matched, ]), mean(results$time))
-resultOverview[3,] = resultSum
+resultOverview[4,] = resultSum

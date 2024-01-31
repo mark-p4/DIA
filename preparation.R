@@ -32,7 +32,7 @@ cleanTags = function(line){
 
 laptop= "C:\\Users\\User\\Dropbox\\PC\\Documents\\Uni\\DIA\\files\\unpacked\\"
 pc = "C:\\Users\\Mark\\Dropbox\\PC\\Documents\\Uni\\DIA\\files\\unpacked\\"
-originPath = pc
+originPath = laptop
 
 #create Paths for both files for the assignment
 dblpPath = paste(originPath, "dblp.txt", sep="")
@@ -73,7 +73,7 @@ df19952004 = df[df$year >= 1995 & df$year <= 2004,]
 
 dfFiltered = df19952004 %>% filter(grepl("sigmod|vldb",ignore.case = TRUE, df19952004$venue))
 
-write.csv(dfFiltered, file = paste(pc,"DBLP_1995_2004.csv", sep = ""), row.names = FALSE)
+write.csv(dfFiltered, file = paste(originPath,"DBLP_1995_2004.csv", sep = ""), row.names = FALSE)
 
 #---------------------------------------------
 #acm import and preparation
@@ -151,4 +151,4 @@ frameArtifacts2 = acmFrame1[acmFrame1$id >= 2178600 & acmFrame1$id <= 2178700,]
 
 dfACMFiltered = dfACM19952004 %>% filter(grepl("sigmod|vldb",ignore.case = TRUE, dfACM19952004$venue))
 
-write.csv(dfACMFiltered, file = paste(pc,"ACM_1995_2004.csv", sep = ""), row.names = FALSE)
+write.csv(dfACMFiltered, file = paste(originPath,"ACM_1995_2004.csv", sep = ""), row.names = FALSE)

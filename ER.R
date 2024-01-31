@@ -9,7 +9,7 @@ library(microbenchmark)
 
 laptop= "C:\\Users\\User\\Dropbox\\PC\\Documents\\Uni\\DIA\\files\\unpacked\\"
 pc = "C:\\Users\\Mark\\Dropbox\\PC\\Documents\\Uni\\DIA\\files\\unpacked\\"
-originPath = pc
+originPath = laptop
 
 dblpPAth = paste(originPath, "DBLP_1995_2004.csv", sep = "")
 acmPath = paste(originPath, "ACM_1995_2004.csv", sep = "")
@@ -41,21 +41,20 @@ colnames(resultOverview) =  overviewCols
 #coding part
 #-------------------------------------------------------------------------------
 
+normText = function(x, whiteSpace = TRUE){
+  x = str_replace_all(x, "[[:punct:]]", "")
+  #x = str_replace_all(x, "[[:alnum:]]", "")
+  if (whiteSpace) {
+    x = str_replace_all(x, "[[:space:]]", "")
+  }
+  x = tolower(x)
+  return(x)
+}
 #-------------------------------------------------------------------------------
 #baseline
 #-------------------------------------------------------------------------------
 
 #make all columns containing text string into lower case and remove special characters and white spaces
-
-normText = function(x, whiteSpace = TRUE){
-  x = str_replace_all(x, "[[:punct:]]", "")
-  x = str_replace_all(x, "[^[:alnum:]]", "")
-  if (whiteSpace) {
-    x = str_replace_all(x, " ", "")
-  }
-  x = tolower(x)
-  return(x)
-}
 
 dblpFiltered = read.csv(dblpPAth)
 acmFiltered = read.csv(acmPath)
@@ -103,15 +102,6 @@ resultOverview[1,] = resultSum
 
 #make all columns containing text string into lower case and remove special characters and white spaces
 
-normText = function(x, whiteSpace = TRUE){
-  x = str_replace_all(x, "[[:punct:]]", "")
-  x = str_replace_all(x, "[^[:alnum:]]", "")
-  if (whiteSpace) {
-    x = str_replace_all(x, " ", "")
-  }
-  x = tolower(x)
-  return(x)
-}
 
 dblpFiltered = read.csv(dblpPAth)
 acmFiltered = read.csv(acmPath)
@@ -194,13 +184,13 @@ resultSum = c("pipeline1", nrow(fullData1), "by yearDiff", "Levenshtein", nrow(f
 resultOverview[3,] = resultSum
 
 #-------------------------------------------------------------------------------
-# blocking by year and levenshtein distance tuned
+# blocking by year and jaccard - distance for trigrams
 #-------------------------------------------------------------------------------
 dblpFiltered = read.csv(dblpPAth)
 acmFiltered = read.csv(acmPath)
 
-dblpFiltered[, c("title","authors","venue","abstract")] = apply(dblpFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x))
-acmFiltered[, c("title","authors","venue","abstract")] = apply(acmFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x))
+dblpFiltered[, c("title","authors","venue","abstract")] = apply(dblpFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x, whiteSpace = FALSE))
+acmFiltered[, c("title","authors","venue","abstract")] = apply(acmFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x, whiteSpace = FALSE))
 
 #dblpFiltered$id = paste("d", 1:nrow(dblpFiltered),sep = "_")
 colnames(dblpFiltered) = paste("d", colnames(dblpFiltered),sep = "_")
@@ -210,23 +200,28 @@ colnames(acmFiltered) = paste("a", colnames(acmFiltered), sep = "_")
 
 fullData = merge(dblpFiltered, acmFiltered)
 
-pipeline1 = function(){
+pipeline2 = function(){
   fullData[, "yearDiff"] = abs(fullData$d_year - fullData$a_year)
-  blockedData = fullData[fullData$yearDiff == 0,]
-  blockedData[, "lvSim"] = stringsim(blockedData$d_title, blockedData$a_title, method = "lv")
-  #untuned
-  blockedData[, "matched"] = blockedData$lvSim >= 0.8
-  #tuned
-  #blockedData[, "matched"] = blockedData$lvSim >= 0.95 
+  blockedData = fullData[fullData$yearDiff <= 3,]
+  blockedData[, "jacSim"] = stringsim(blockedData$d_title, blockedData$a_title, method = "jaccard", q = 3)
+  blockedData[, "matched"] = blockedData$jacSim >= 0.8
   return(blockedData)
 }
 
-results = microbenchmark(pipeline1(), times = 10)
-write.csv(results,paste(originPath, "result_pipeline1_untuned_bench.csv", sep = ""), row.names = FALSE)
+results = microbenchmark(pipeline2(), times = 10)
+write.csv(results, paste(originPath, "result_pipeline1_untuned_bench.csv", sep = ""), row.names = FALSE)
 #write.csv(results,paste(originPath, "result_pipeline1_bench.csv", sep = ""), row.names = FALSE)
 
-fullData1 = pipeline1()
+fullData1 = pipeline2()
+hist(fullData1$jacSim)
 nrow(fullData1[fullData1$matched, ])
 
-write.csv(fullData1[,c("d_id", "a_id", "lvSim","matched")], paste(originPath, "matched_Entities_pipeline1_untuned.csv", sep = ""), row.names = FALSE)
+similar = fullData1[fullData1$matched, c("d_title", "a_title", "jacSim", "matched")]
+
+#stringsim(strsplit(x = fullData[1, "d_title"], split = " "), strsplit(x = fullData[1, "a_title"], split = " "), method = "jaccard")
+
+write.csv(fullData1[,c("d_id", "a_id", "jacSim","matched")], paste(originPath, "matched_Entities_pipeline1_untuned.csv", sep = ""), row.names = FALSE)
 #write.csv(fullData1[,c("d_id", "a_id", "lvSim","matched")], paste(originPath, "matched_Entities_pipeline1.csv", sep = ""), row.names = FALSE)
+
+resultSum = c("pipeline2", nrow(fullData1), "by yearDiff", "jaccard trigram", nrow(fullData1[fullData1$matched, ]), mean(results$time))
+resultOverview[3,] = resultSum

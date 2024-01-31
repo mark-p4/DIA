@@ -14,7 +14,7 @@ originPath = pc
 dblpPAth = paste(originPath, "DBLP_1995_2004.csv", sep = "")
 acmPath = paste(originPath, "ACM_1995_2004.csv", sep = "")
 
-overviewCols = c("experiment", "tuplesComputed" ,"blocking", "SimMeasure", "Matches", "avgTime")
+overviewCols = c("experiment", "tuplesComputed" ,"blocking", "SimMeasure", "Matches", "avgMatchTime", "avgClustTime")
 resultOverview = data.frame(matrix(nrow = 10, ncol = length(overviewCols)))
 colnames(resultOverview) =  overviewCols
 
@@ -84,16 +84,16 @@ baseLineLV = function(fullData1){
 }
 
 #microbenchmark results are in Nanoseconds
-results = microbenchmark(baseLineLV(fullData), times = 10)
-#print(results, unit = "ns")
-write.csv(results,paste(originPath, "result_baseline_bench.csv", sep = ""), row.names = FALSE)
+resultsMatch = microbenchmark(baseLineLV(fullData), times = 10)
+#print(resultsMatch, unit = "ns")
+write.csv(resultsMatch,paste(originPath, "result_baseline_bench.csv", sep = ""), row.names = FALSE)
 
 fullData1 = baseLineLV(fullData)
 nrow(fullData1[fullData1$matched, ])
 
 write.csv(fullData1[,c("d_id", "a_id", "lvSim","matched")], paste(originPath, "matched_Entities_Baseline.csv", sep = ""), row.names = FALSE)
 
-resultSum = c("baseline", nrow(fullData), "without", "Levenshtein - untuned", nrow(fullData1[fullData1$matched, ]), mean(results$time))
+resultSum = c("baseline", nrow(fullData), "without", "Levenshtein - untuned", nrow(fullData1[fullData1$matched, ]), mean(resultsMatch$time))
 resultOverview[1,] = resultSum
 
 #-------------------------------------------------------------------------------
@@ -131,16 +131,16 @@ baseLineLV = function(fullData1){
 }
 
 #microbenchmark results are in Nanoseconds
-results = microbenchmark(baseLineLV(fullData), times = 10)
-#print(results, unit = "ns")
-write.csv(results,paste(originPath, "result_baseline_tuned_bench.csv", sep = ""), row.names = FALSE)
+resultsMatch = microbenchmark(baseLineLV(fullData), times = 10)
+#print(resultsMatch, unit = "ns")
+write.csv(resultsMatch,paste(originPath, "result_baseline_tuned_bench.csv", sep = ""), row.names = FALSE)
 
 fullData1 = baseLineLV(fullData)
 nrow(fullData1[fullData1$matched, ])
 
 write.csv(fullData1[,c("d_id", "a_id", "lvSim","matched")], paste(originPath, "matched_Entities_Baseline_tuned.csv", sep = ""), row.names = FALSE)
 
-resultSum = c("baseline-tuned", nrow(fullData), "without", "Levenshtein", nrow(fullData1[fullData1$matched, ]), mean(results$time))
+resultSum = c("baseline-tuned", nrow(fullData), "without", "Levenshtein", nrow(fullData1[fullData1$matched, ]), mean(resultsMatch$time))
 resultOverview[2,] = resultSum
 
 #-------------------------------------------------------------------------------
@@ -171,16 +171,16 @@ pipeline1 = function(){
   return(blockedData)
 }
 
-results = microbenchmark(pipeline1(), times = 10)
-write.csv(results,paste(originPath, "result_pipeline1_bench.csv", sep = ""), row.names = FALSE)
-#write.csv(results,paste(originPath, "result_pipeline1_bench.csv", sep = ""), row.names = FALSE)
+resultsMatch = microbenchmark(pipeline1(), times = 10)
+write.csv(resultsMatch,paste(originPath, "result_pipeline1_bench.csv", sep = ""), row.names = FALSE)
+#write.csv(resultsMatch,paste(originPath, "result_pipeline1_bench.csv", sep = ""), row.names = FALSE)
 
 fullData1 = pipeline1()
 
 write.csv(fullData1[,c("d_id", "a_id", "lvSim","matched")], paste(originPath, "matched_Entities_pipeline1.csv", sep = ""), row.names = FALSE)
 #write.csv(fullData1[,c("d_id", "a_id", "lvSim","matched")], paste(originPath, "matched_Entities_pipeline1.csv", sep = ""), row.names = FALSE)
 
-resultSum = c("pipeline1", nrow(fullData1), "by yearDiff", "Levenshtein", nrow(fullData1[fullData1$matched, ]), mean(results$time))
+resultSum = c("pipeline1", nrow(fullData1), "by yearDiff", "Levenshtein", nrow(fullData1[fullData1$matched, ]), mean(resultsMatch$time))
 resultOverview[3,] = resultSum
 
 #-------------------------------------------------------------------------------
@@ -200,6 +200,8 @@ colnames(acmFiltered) = paste("a", colnames(acmFiltered), sep = "_")
 
 fullData = merge(dblpFiltered, acmFiltered)
 
+
+
 pipeline2 = function(){
   fullData[, "yearDiff"] = abs(fullData$d_year - fullData$a_year)
   blockedData = fullData[fullData$yearDiff <= 3,]
@@ -208,11 +210,13 @@ pipeline2 = function(){
   return(blockedData)
 }
 
-results = microbenchmark(pipeline2(), times = 10)
-write.csv(results, paste(originPath, "result_pipeline2_bench.csv", sep = ""), row.names = FALSE)
-#write.csv(results,paste(originPath, "result_pipeline1_bench.csv", sep = ""), row.names = FALSE)
+resultsMatch = microbenchmark(pipeline2(), times = 10)
+write.csv(resultsMatch, paste(originPath, "result_pipeline2_bench.csv", sep = ""), row.names = FALSE)
+#write.csv(resultsMatch,paste(originPath, "result_pipeline1_bench.csv", sep = ""), row.names = FALSE)
 
 fullData1 = pipeline2()
+
+
 hist(fullData1$jacSim)
 nrow(fullData1[fullData1$matched, ])
 
@@ -223,5 +227,5 @@ similar = fullData1[fullData1$matched, c("d_id","d_title", "a_id","a_title", "ja
 write.csv(fullData1[,c("d_id", "a_id", "jacSim","matched")], paste(originPath, "matched_Entities_pipeline2.csv", sep = ""), row.names = FALSE)
 #write.csv(fullData1[,c("d_id", "a_id", "lvSim","matched")], paste(originPath, "matched_Entities_pipeline1.csv", sep = ""), row.names = FALSE)
 
-resultSum = c("pipeline2", nrow(fullData1), "by yearDiff", "jaccard trigram", nrow(fullData1[fullData1$matched, ]), mean(results$time))
+resultSum = c("pipeline2", nrow(fullData1), "by yearDiff", "jaccard trigram", nrow(fullData1[fullData1$matched, ]), mean(resultsMatch$time))
 resultOverview[4,] = resultSum

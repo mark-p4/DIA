@@ -30,7 +30,15 @@ clusterMatched = function(matches){
   return(matches)
 }
 
-fullData2 = clusterMatched(fullData1[fullData1$matched, ])
+#calculate all tuples that are duplicates based on the single "best choice" from each graph
+#all other tuples are discarded
+duplicateTupleIDs = function(matches){
+  idList = unique(append(matches$d_id, matches$a_id))
+  return(subset(idList, !(idList %in% matches$refersTo)))
+}
+
+
+
 #create a dataframe that contains all edges of matched entities
 #matches = similar[,c("d_id", "a_id")]
 

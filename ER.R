@@ -80,6 +80,7 @@ baseLineLV = function(fullData1){
   fullData1[, "Sim"] = stringsim(fullData1$d_title, fullData1$a_title, method = "lv")
   #fullData1[, "lvPerc"] = fullData1$lvDist / max(nchar(fullData1$d_title), nchar(fullData1$a_title))
   fullData1[, "matched"] = fullData1$Sim >= 0.8
+  fullData = fullData1
   fullData1 = clusterMatched(fullData1[fullData1$matched, ])
   return(fullData1)
 }
@@ -99,7 +100,7 @@ colnames(dblpFiltered) = nameVec
 resolvedEntities = rbind(acmFiltered, dblpFiltered)
 resolvedEntities = resolvedEntities[ !(resolvedEntities$id %in% duplicateEntries),]
 
-write.csv(fullData1[,c("d_id", "a_id", "Sim","matched")], paste(originPath, "matched_Entities_Baseline.csv", sep = ""), row.names = FALSE)
+write.csv(fullData[,c("d_id", "a_id", "Sim","matched")], paste(originPath, "matched_Entities_Baseline.csv", sep = ""), row.names = FALSE)
 
 resultSum = c("baseline", nrow(fullData), "without", "Levenshtein - untuned", nrow(fullData1[fullData1$matched, ]), mean(resultsMatch$time), length(duplicateEntries))
 resultOverview[1,] = resultSum
@@ -130,6 +131,7 @@ baseLineLV = function(fullData1){
   fullData1[, "Sim"] = stringsim(fullData1$d_title, fullData1$a_title, method = "lv")
   #fullData1[, "lvPerc"] = fullData1$lvDist / max(nchar(fullData1$d_title), nchar(fullData1$a_title))
   fullData1[, "matched"] = fullData1$Sim >= 0.95
+  fullData = fullData1
   fullData1 = clusterMatched(fullData1[fullData1$matched, ])
   return(fullData1)
 }
@@ -149,7 +151,7 @@ colnames(dblpFiltered) = nameVec
 resolvedEntities = rbind(acmFiltered, dblpFiltered)
 resolvedEntities = resolvedEntities[ !(resolvedEntities$id %in% duplicateEntries),]
 
-write.csv(fullData1[,c("d_id", "a_id", "Sim","matched")], paste(originPath, "matched_Entities_Baseline_tuned.csv", sep = ""), row.names = FALSE)
+write.csv(fullData[,c("d_id", "a_id", "Sim","matched")], paste(originPath, "matched_Entities_Baseline_tuned.csv", sep = ""), row.names = FALSE)
 
 resultSum = c("baseline-tuned", nrow(fullData), "without", "Levenshtein", nrow(fullData1[fullData1$matched, ]), mean(resultsMatch$time), length(duplicateEntries))
 resultOverview[2,] = resultSum
@@ -176,6 +178,7 @@ pipeline1 = function(){
   blockedData = fullData[fullData$yearDiff <= 3,]
   blockedData[, "Sim"] = stringsim(blockedData$d_title, blockedData$a_title, method = "lv")
   blockedData[, "matched"] = blockedData$Sim >= 0.95
+  fullData = blockedData
   blockedData = clusterMatched(blockedData[blockedData$matched,])
   return(blockedData)
 }
@@ -193,7 +196,7 @@ colnames(dblpFiltered) = nameVec
 resolvedEntities = rbind(acmFiltered, dblpFiltered)
 resolvedEntities = resolvedEntities[ !(resolvedEntities$id %in% duplicateEntries),]
 
-write.csv(fullData1[,c("d_id", "a_id", "Sim","matched")], paste(originPath, "matched_Entities_pipeline1.csv", sep = ""), row.names = FALSE)
+write.csv(fullData[,c("d_id", "a_id", "Sim","matched")], paste(originPath, "matched_Entities_pipeline1.csv", sep = ""), row.names = FALSE)
 #write.csv(fullData1[,c("d_id", "a_id", "lvSim","matched")], paste(originPath, "matched_Entities_pipeline1.csv", sep = ""), row.names = FALSE)
 
 resultSum = c("pipeline1", nrow(fullData1), "by yearDiff", "Levenshtein title", nrow(fullData1[fullData1$matched, ]), mean(resultsMatch$time), length(duplicateEntries))
@@ -223,6 +226,7 @@ pipeline2 = function(){
   blockedData = fullData[fullData$yearDiff <= 1,]
   blockedData[, "Sim"] = stringsim(blockedData$d_title, blockedData$a_title, method = "jaccard", q = 3)
   blockedData[, "matched"] = blockedData$Sim >= 0.7
+  fullData = blockedData
   blockedData = clusterMatched(blockedData[blockedData$matched,])
   return(blockedData)
 }
@@ -245,7 +249,7 @@ resolvedEntities = resolvedEntities[ !(resolvedEntities$id %in% duplicateEntries
 #similar = fullData1[fullData1$matched, c("d_id","d_title", "a_id","a_title", "Sim", "matched")]
 
 
-write.csv(fullData1[,c("d_id", "a_id", "Sim","matched")], paste(originPath, "matched_Entities_pipeline2.csv", sep = ""), row.names = FALSE)
+write.csv(fullData[,c("d_id", "a_id", "Sim","matched")], paste(originPath, "matched_Entities_pipeline2.csv", sep = ""), row.names = FALSE)
 
 resultSum = c("pipeline2", nrow(fullData1), "by yearDiff", "jaccard trigram title", nrow(fullData1[fullData1$matched, ]), mean(resultsMatch$time), length(duplicateEntries))
 resultOverview[4,] = resultSum
@@ -276,6 +280,7 @@ pipeline3 = function(){
     (grepl("vldb",x = blockedData$d_venue, ignore.case = TRUE) & grepl("vldb",x = blockedData$a_venue, ignore.case = TRUE))  ,]
   blockedData[, "Sim"] = stringsim(blockedData$d_title, blockedData$a_title, method = "jaccard", q = 3)
   blockedData[, "matched"] = blockedData$Sim >= 0.7
+  fullData = blockedData
   blockedData = clusterMatched(blockedData[blockedData$matched,])
   return(blockedData)
 }
@@ -300,7 +305,7 @@ resolvedEntities = resolvedEntities[ !(resolvedEntities$id %in% duplicateEntries
 #similar = fullData1[fullData1$matched, c("d_id","d_title", "a_id","a_title", "Sim", "matched")]
 
 
-write.csv(fullData1[,c("d_id", "a_id", "Sim","matched")], paste(originPath, "matched_Entities_pipeline3.csv", sep = ""), row.names = FALSE)
+write.csv(fullData[,c("d_id", "a_id", "Sim","matched")], paste(originPath, "matched_Entities_pipeline3.csv", sep = ""), row.names = FALSE)
 
 resultSum = c("pipeline3", nrow(fullData1), "yearDiff & venue", "jaccard trigram title", nrow(fullData1[fullData1$matched, ]), mean(resultsMatch$time), length(duplicateEntries))
 resultOverview[5,] = resultSum
@@ -331,9 +336,11 @@ pipeline4 = function(){
   blockedData[, "SimTitle"] = stringsim(blockedData$d_title, blockedData$a_title, method = "jaccard", q = 3)
   blockedData[, "SimAuthors"] = stringsim(blockedData$d_authors, blockedData$a_authors, method = "jaccard", q = 3)
   blockedData = add_column(blockedData, Sim = ifelse(is.na(blockedData$SimAuthors), blockedData$SimTitle, (blockedData$SimTitle + blockedData$SimAuthors)/2)) 
-  
   blockedData[, "matched"] = blockedData$Sim >= 0.7
+  fullData = blockedData
+  fullData[, c("clustNo", "refersTo")] = NA
   blockedData = clusterMatched(blockedData[blockedData$matched,])
+  blockedData = rbind(blockedData, fullData[!fullData$matched, ])
   return(blockedData)
 }
 

@@ -14,7 +14,7 @@ source("clustering.R")
 
 laptop= "C:\\Users\\User\\Dropbox\\PC\\Documents\\Uni\\DIA\\files\\unpacked\\"
 pc = "C:\\Users\\Mark\\Dropbox\\PC\\Documents\\Uni\\DIA\\files\\unpacked\\"
-originPath = pc
+originPath = mainPath
 
 dblpPAth = paste(originPath, "DBLP_1995_2004.csv", sep = "")
 acmPath = paste(originPath, "ACM_1995_2004.csv", sep = "")
@@ -93,7 +93,7 @@ baseLineLV = function(fullData1){
 }
 
 #microbenchmark results are in Nanoseconds
-resultsMatch = microbenchmark(baseLineLV(fullData), times = 10)
+resultsMatch = microbenchmark(baseLineLV(fullData), times = numBenchMarkRuns)
 #print(resultsMatch, unit = "ns")
 write.csv(resultsMatch,paste(originPath, "result_baseline_bench.csv", sep = ""), row.names = FALSE)
 
@@ -146,7 +146,7 @@ baseLineLV = function(fullData1){
 }
 
 #microbenchmark results are in Nanoseconds
-resultsMatch = microbenchmark(baseLineLV(fullData), times = 10)
+resultsMatch = microbenchmark(baseLineLV(fullData), times = numBenchMarkRuns)
 #print(resultsMatch, unit = "ns")
 write.csv(resultsMatch,paste(originPath, "result_baseline_tuned_bench.csv", sep = ""), row.names = FALSE)
 
@@ -194,7 +194,7 @@ pipeline1 = function(){
   return(blockedData)
 }
 
-resultsMatch = microbenchmark(pipeline1(), times = 10)
+resultsMatch = microbenchmark(pipeline1(), times = numBenchMarkRuns)
 write.csv(resultsMatch,paste(originPath, "result_pipeline1_bench.csv", sep = ""), row.names = FALSE)
 #write.csv(resultsMatch,paste(originPath, "result_pipeline1_bench.csv", sep = ""), row.names = FALSE)
 
@@ -244,7 +244,7 @@ pipeline2 = function(){
   return(blockedData)
 }
 
-resultsMatch = microbenchmark(pipeline2(), times = 10)
+resultsMatch = microbenchmark(pipeline2(), times = numBenchMarkRuns)
 write.csv(resultsMatch, paste(originPath, "result_pipeline2_bench.csv", sep = ""), row.names = FALSE)
 
 fullData1 = pipeline2()
@@ -302,7 +302,7 @@ pipeline3 = function(){
 
 
 
-resultsMatch = microbenchmark(pipeline3(), times = 10)
+resultsMatch = microbenchmark(pipeline3(), times = numBenchMarkRuns)
 write.csv(resultsMatch, paste(originPath, "result_pipeline2_bench.csv", sep = ""), row.names = FALSE)
 
 fullData1 = pipeline3()
@@ -321,6 +321,8 @@ resolvedEntities = resolvedEntities[ !(resolvedEntities$id %in% duplicateEntries
 
 
 write.csv(fullData1[,c("d_id", "a_id", "Sim","matched")], paste(originPath, "matched_Entities_pipeline3.csv", sep = ""), row.names = FALSE)
+
+write.csv(fullData1, paste(originPath, "Matched_Entities.csv", sep = ""), row.names = F)
 
 resultSum = c("pipeline3", nrow(fullData1), "yearDiff & venue", "jaccard trigram title", nrow(fullData1[fullData1$matched, ]), mean(resultsMatch$time), length(duplicateEntries))
 resultOverview[5,] = resultSum
@@ -359,7 +361,7 @@ pipeline4 = function(){
   return(blockedData)
 }
 
-resultsMatch = microbenchmark(pipeline4(), times = 10)
+resultsMatch = microbenchmark(pipeline4(), times = numBenchMarkRuns)
 write.csv(resultsMatch, paste(originPath, "result_pipeline4_bench.csv", sep = ""), row.names = FALSE)
 
 fullData1 = pipeline4()

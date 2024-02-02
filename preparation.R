@@ -32,11 +32,12 @@ cleanTags = function(line){
 
 laptop= "C:\\Users\\User\\Dropbox\\PC\\Documents\\Uni\\DIA\\files\\unpacked\\"
 pc = "C:\\Users\\Mark\\Dropbox\\PC\\Documents\\Uni\\DIA\\files\\unpacked\\"
-originPath = laptop
+originPath = mainPath
 
 #create Paths for both files for the assignment
 dblpPath = paste(originPath, "dblp.txt", sep="")
 acmPath = paste(originPath, "citation-acm-v8.txt", sep="")
+
 
 dblpTXT = read_delim(dblpPath, delim = "\t", col_names = FALSE)
 dblpFrame = data.frame(dblpTXT)

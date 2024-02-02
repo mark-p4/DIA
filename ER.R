@@ -6,6 +6,11 @@ library(foreach)
 library(arsenal)
 library(stringdist)
 library(microbenchmark)
+library(igraph)
+library(MCL)
+library(ggplot2)
+
+source("clustering.R")
 
 laptop= "C:\\Users\\User\\Dropbox\\PC\\Documents\\Uni\\DIA\\files\\unpacked\\"
 pc = "C:\\Users\\Mark\\Dropbox\\PC\\Documents\\Uni\\DIA\\files\\unpacked\\"
@@ -133,10 +138,10 @@ baseLineLV = function(fullData1){
   fullData1[, "Sim"] = stringsim(fullData1$d_title, fullData1$a_title, method = "lv")
   #fullData1[, "lvPerc"] = fullData1$lvDist / max(nchar(fullData1$d_title), nchar(fullData1$a_title))
   fullData1[, "matched"] = fullData1$Sim >= 0.95
-  fullData = fullData1
-  fullData[, c("clustNo", "refersTo")] = NA
+  #fullData = fullData1
+  #fullData[, c("clustNo", "refersTo")] = NA
   fullData1 = clusterMatched(fullData1[fullData1$matched, ])
-  fullData1 = rbind(fullData1, fullData[!fullData$matched, ])
+  #fullData1 = rbind(fullData1, fullData[!fullData$matched, ])
   return(fullData1)
 }
 
@@ -182,10 +187,11 @@ pipeline1 = function(){
   blockedData = fullData[fullData$yearDiff <= 3,]
   blockedData[, "Sim"] = stringsim(blockedData$d_title, blockedData$a_title, method = "lv")
   blockedData[, "matched"] = blockedData$Sim >= 0.95
-  fullData = blockedData
-  fullData[, c("clustNo", "refersTo")] = NA
+  #fullData = blockedData
+  #fullData[, c("clustNo", "refersTo")] = NA
   blockedData = clusterMatched(blockedData[blockedData$matched,])
-  blockedData = rbind(blockedData, fullData[!fullData$matched, ])
+  #blockedData = rbind(blockedData, fullData[!fullData$matched, ])
+  return(blockedData)
 }
 
 resultsMatch = microbenchmark(pipeline1(), times = 10)
@@ -231,10 +237,11 @@ pipeline2 = function(){
   blockedData = fullData[fullData$yearDiff <= 1,]
   blockedData[, "Sim"] = stringsim(blockedData$d_title, blockedData$a_title, method = "jaccard", q = 3)
   blockedData[, "matched"] = blockedData$Sim >= 0.7
-  fullData = blockedData
-  fullData[, c("clustNo", "refersTo")] = NA
+  #fullData = blockedData
+  #fullData[, c("clustNo", "refersTo")] = NA
   blockedData = clusterMatched(blockedData[blockedData$matched,])
-  blockedData = rbind(blockedData, fullData[!fullData$matched, ])
+  #blockedData = rbind(blockedData, fullData[!fullData$matched, ])
+  return(blockedData)
 }
 
 resultsMatch = microbenchmark(pipeline2(), times = 10)
@@ -286,10 +293,11 @@ pipeline3 = function(){
     (grepl("vldb",x = blockedData$d_venue, ignore.case = TRUE) & grepl("vldb",x = blockedData$a_venue, ignore.case = TRUE))  ,]
   blockedData[, "Sim"] = stringsim(blockedData$d_title, blockedData$a_title, method = "jaccard", q = 3)
   blockedData[, "matched"] = blockedData$Sim >= 0.7
-  fullData = blockedData
-  fullData[, c("clustNo", "refersTo")] = NA
+  #fullData = blockedData
+  #fullData[, c("clustNo", "refersTo")] = NA
   blockedData = clusterMatched(blockedData[blockedData$matched,])
-  blockedData = rbind(blockedData, fullData[!fullData$matched, ])
+  #blockedData = rbind(blockedData, fullData[!fullData$matched, ])
+  return(blockedData)
 }
 
 
@@ -344,10 +352,10 @@ pipeline4 = function(){
   blockedData[, "SimAuthors"] = stringsim(blockedData$d_authors, blockedData$a_authors, method = "jaccard", q = 3)
   blockedData = add_column(blockedData, Sim = ifelse(is.na(blockedData$SimAuthors), blockedData$SimTitle, (blockedData$SimTitle + blockedData$SimAuthors)/2)) 
   blockedData[, "matched"] = blockedData$Sim >= 0.7
-  fullData = blockedData
-  fullData[, c("clustNo", "refersTo")] = NA
+  #fullData = blockedData
+  #fullData[, c("clustNo", "refersTo")] = NA
   blockedData = clusterMatched(blockedData[blockedData$matched,])
-  blockedData = rbind(blockedData, fullData[!fullData$matched, ])
+  #blockedData = rbind(blockedData, fullData[!fullData$matched, ])
   return(blockedData)
 }
 
@@ -376,3 +384,4 @@ resultOverview[6,] = resultSum
 
 #-------------------------------------------------------------------------------
 write.csv(resultOverview, paste(originPath, "resultOverview.csv",sep = ""), row.names = F)
+

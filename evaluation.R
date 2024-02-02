@@ -8,19 +8,33 @@ files = list.files(pc)
 baselineFile = "matched_Entities_Baseline.csv"
 files = subset(files, startsWith(files, "matched_Entities") & !startsWith(files, baselineFile))
 
+colScoreDF = c("baselineExp", "predictionExp", "precision", "recall", "f1-Score")
+scoreDF = data.frame(matrix(ncol = length(colScoreDF), nrow = 5))
+colnames(scoreDF) = colScoreDF
+
 baseline = read.csv(paste(pc, baselineFile, sep = ""))
 baseline = add_column(baseline, key = paste(baseline$d_id, baseline$a_id, sep = "-"))
-toCompare = read.csv(paste(pc, files[5], sep =""))
-toCompare = add_column(toCompare, key = paste(toCompare$d_id, toCompare$a_id ,sep = "-"))
-
-baseline[,"pipe4"] = F
-
-for (i in 1:nrow(toCompare)) {
-  baseline[toCompare[i, "key"] == baseline$key, "pipe4"] = toCompare[i, "matched"]
+for (i in 1:length(files)) {
+  baseline1 = baseline
+  fileName = substr(files[i], nchar("matched_Entities_")+1, nchar(files[i])-4)
+  toCompare = read.csv(paste(pc, files[i], sep =""))
+  toCompare = add_column(toCompare, key = paste(toCompare$d_id, toCompare$a_id ,sep = "-"))
+  newDF = left_join(baseline, toCompare, "key")
+  newDF[, "matched.y"] = if_else(is.na(newDF$matched.y), F, newDF$matched.y)
+  
+  prec = Metrics::precision(newDF$matched.x, predicted = newDF$matched.y)
+  rec = Metrics::recall(newDF$matched.x, predicted = newDF$matched.y)
+  f1 = Metrics::f1(newDF$matched.x, predicted = newDF$matched.y)
+  
+  scoreDF[i,] = c("baseline - untuned", fileName, prec, rec, f1)
 }
 
-newDF = left_join(baseline, toCompare, "key")
+write.csv(scoreDF, paste(originPath, "scoring.csv", sep = ""), row.names = F)
 
-Metrics::precision(newDF$matched.x, newDF$pipe4)
-Metrics::recall(newDF$matched.x, newDF$pipe4)
-Metrics::f1(newDF$matched.x, newDF$pipe4)
+#baseline[,"pipe4"] = F
+
+#for (i in 1:nrow(toCompare)) {
+#  baseline[toCompare[i, "key"] == baseline$key, "pipe4"] = toCompare[i, "matched"]
+#}
+
+

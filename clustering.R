@@ -37,7 +37,7 @@ duplicateTupleIDs = function(matches){
   return(subset(idList, !(idList %in% matches$refersTo)))
 }
 
-fullData2 = clusterMatched(fullData1[fullData1$matched, ])
+#fullData2 = clusterMatched(fullData1[fullData1$matched, ])
 
 #create a dataframe that contains all edges of matched entities
 #matches = similar[,c("d_id", "a_id")]

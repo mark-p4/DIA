@@ -63,10 +63,10 @@ acmFiltered = read.csv(acmPath)
 dblpFiltered[, c("title","authors","venue","abstract")] = apply(dblpFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x))
 acmFiltered[, c("title","authors","venue","abstract")] = apply(acmFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x))
 
-#dblpFiltered$id = paste("d", 1:nrow(dblpFiltered),sep = "_")
+dblpFiltered$id = paste("d", 1:nrow(dblpFiltered),sep = "_")
 colnames(dblpFiltered) = paste("d", colnames(dblpFiltered),sep = "_")
 
-#acmFiltered$id = paste("a",1:nrow(acmFiltered), sep = "_")
+acmFiltered$id = paste("a",1:nrow(acmFiltered), sep = "_")
 colnames(acmFiltered) = paste("a", colnames(acmFiltered), sep = "_")
 
 fullData = merge(dblpFiltered, acmFiltered)
@@ -121,10 +121,10 @@ acmFiltered = read.csv(acmPath)
 dblpFiltered[, c("title","authors","venue","abstract")] = apply(dblpFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x))
 acmFiltered[, c("title","authors","venue","abstract")] = apply(acmFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x))
 
-#dblpFiltered$id = paste("d", 1:nrow(dblpFiltered),sep = "_")
+dblpFiltered$id = paste("d", 1:nrow(dblpFiltered),sep = "_")
 colnames(dblpFiltered) = paste("d", colnames(dblpFiltered),sep = "_")
 
-#acmFiltered$id = paste("a",1:nrow(acmFiltered), sep = "_")
+acmFiltered$id = paste("a",1:nrow(acmFiltered), sep = "_")
 colnames(acmFiltered) = paste("a", colnames(acmFiltered), sep = "_")
 
 fullData = merge(dblpFiltered, acmFiltered)
@@ -169,10 +169,10 @@ acmFiltered = read.csv(acmPath)
 dblpFiltered[, c("title","authors","venue","abstract")] = apply(dblpFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x))
 acmFiltered[, c("title","authors","venue","abstract")] = apply(acmFiltered[, c("title","authors","venue","abstract")], MARGIN = 2, FUN = function(x) normText(x))
 
-#dblpFiltered$id = paste("d", 1:nrow(dblpFiltered),sep = "_")
+dblpFiltered$id = paste("d", 1:nrow(dblpFiltered),sep = "_")
 colnames(dblpFiltered) = paste("d", colnames(dblpFiltered),sep = "_")
 
-#acmFiltered$id = paste("a",1:nrow(acmFiltered), sep = "_")
+acmFiltered$id = paste("a",1:nrow(acmFiltered), sep = "_")
 colnames(acmFiltered) = paste("a", colnames(acmFiltered), sep = "_")
 
 fullData = merge(dblpFiltered, acmFiltered)
